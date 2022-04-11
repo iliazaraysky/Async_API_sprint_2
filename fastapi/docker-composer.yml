@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - http.compression=true
+      - http.max_content_length=500mb
+    env_file:
+      - ./.env
+  redis01:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    env_file:
+      - ./.env
+  fastapi:
+    build: .
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - es01
+      - redis01
+    env_file:
+      - ./.env

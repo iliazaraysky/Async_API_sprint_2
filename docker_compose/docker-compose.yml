@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13.6
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./database/film_work_data.sql:/docker-entrypoint-initdb.d/film_work_data.sql
+    env_file:
+      - ./.env
+    environment:
+      - 'POSTGRES_USER:"${POSTGRES_USER}'
+      - 'POSTGRES_PASSWORD:${POSTGRES_PASSWORD}'
+      - 'POSTGRES_DB:${POSTGRES_DB}'
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - http.compression=true
+      - http.max_content_length=500mb
+    depends_on:
+      - db
+  etl01:
+    build: ../etl/
+    env_file:
+      - ../docker_compose/.env
+    depends_on:
+      - es01
+      - db
+  redis01:
+    image: redis:7.0-rc3-alpine3.15
+    ports:
+      - 6379:6379
+  fastapi:
+    build: ../fastapi/
+    restart: always
+    ports:
+      - 8000:8000
+    depends_on:
+      - es01
+      - redis01
+      - etl01
+    env_file:
+      - ../docker_compose/.env
+
+volumes:
+  postgres_data:
