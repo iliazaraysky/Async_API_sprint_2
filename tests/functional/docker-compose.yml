@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  es01t:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - http.compression=true
+      - http.max_content_length=500mb
+    container_name: elasticsearch_test
+  redis01t:
+    image: redis:7.0-rc3-alpine3.15
+    ports:
+      - 6379:6379
+    container_name: redis_tests
+  fastapi01t:
+    build: ../../fastapi/
+    restart: always
+    ports:
+        - 8000:8000
+    env_file:
+      - ../../fastapi/.testenv
+    container_name: fastapi_tests

@@ -1,10 +1,10 @@
 import aiohttp
 import pytest
-
+import pytest_asyncio
 from typing import Optional
 from dataclasses import dataclass
 from multidict import CIMultiDictProxy
-# from elasticsearch import AsyncElasticsearch
+from elasticsearch import AsyncElasticsearch
 
 SERVICE_URL = 'http://127.0.0.1:8000'
 
@@ -14,6 +14,13 @@ class HTTPResponse:
     body: dict
     headers: CIMultiDictProxy[str]
     status: int
+
+
+@pytest.fixture(scope='session')
+async def es_client():
+    client = AsyncElasticsearch(hosts='0.0.0.0:9200')
+    yield client
+    await client.close()
 
 
 @pytest.fixture(scope='session')
@@ -35,11 +42,3 @@ def make_get_request(session):
                 status=response.status,
             )
         return inner
-
-
-@pytest.mark.asyncio
-async def test_search_detailed(make_get_request):
-    response = await make_get_request('/search', {'search': 'Star Wars'})
-
-    assert response.status == 200
-    assert len(response.body) == 1

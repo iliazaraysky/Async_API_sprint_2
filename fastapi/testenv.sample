@@ -1,0 +1,2 @@
+REDIS_HOST=redis01t
+ELASTIC_HOST=es01t
