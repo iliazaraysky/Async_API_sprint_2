@@ -63,7 +63,7 @@ async def film_search(query: str,
         - **Колличество объектов на странице**: page[size]
 
     """
-    films_all = await film_service.search_films_from_elastic(
+    films_all = await film_service.get_search_result_from_elastic(
         query,
         page_number,
         page_size

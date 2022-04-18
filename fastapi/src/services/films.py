@@ -47,12 +47,31 @@ class FilmService(BaseDetail):
             await self._put_films_list_to_cache(query, films)
         return films
 
+    async def get_search_result_from_elastic(
+            self,
+            query: str,
+            page_number: int,
+            page_size: int
+    ):
+        query_redis = ('search_' + str(query) + str(page_number) + str(page_size))
+        films = await self._films_list_from_cache(query_redis)
+        if not films:
+            films = await self.search_films_from_elastic(
+                query,
+                page_number,
+                page_size
+            )
+            if not films:
+                return None
+            await self._put_films_list_to_cache(query_redis, films)
+        return films
+
     async def search_films_from_elastic(self,
                                         query: str,
                                         page_number: int,
                                         page_size: int):
         data = {
-            'from': page_number,
+            'from': (page_number - 1) * page_size,
             'size': page_size,
             'query': {
                 'simple_query_string': {
@@ -62,6 +81,7 @@ class FilmService(BaseDetail):
                 }
             }
         }
+
         films = await self.elastic.search(index='movies', body=data)
         films_list = [
             Film(**film['_source']) for film in films['hits']['hits']
@@ -80,7 +100,7 @@ class FilmService(BaseDetail):
             sort_param = 'desc'
 
         data = {
-            'from': page_number,
+            'from': (page_number - 1) * page_size,
             'size': page_size,
             'sort': [
                 {

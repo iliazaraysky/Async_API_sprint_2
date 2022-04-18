@@ -28,7 +28,7 @@ async def person_search(
         - **Номер страницы**: page[number]
         - **Колличество объектов на странице**: page[size]
     """
-    persons_all = await person_service.search_persons_from_elastic(
+    persons_all = await person_service.get_search_result_from_elastic(
         query,
         page_number,
         page_size

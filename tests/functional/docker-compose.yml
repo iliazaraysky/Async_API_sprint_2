@@ -24,3 +24,16 @@ services:
     env_file:
       - ../../fastapi/.testenv
     container_name: fastapi_tests
+  tests01:
+    build: ../../
+    entrypoint: >
+      sh -c "python functional/utils/waiter_es.py &&
+             python functional/utils/waiter_redis.py &&
+             pytest functional"
+    depends_on:
+      - fastapi01t
+      - es01t
+      - redis01t
+    container_name: tests
+    env_file:
+      - ../.env
