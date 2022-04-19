@@ -1,10 +1,12 @@
-from http import HTTPStatus
-
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
-
-from models.film import FilmSearchShort, FilmDetailView
+from http import HTTPStatus
+from .params import PaginatedParams
 from services.films import FilmService, get_film_service
+from fastapi import APIRouter, Depends, HTTPException, Query
+from models.film import FilmSearchShort, FilmDetailView, Film
+
+from services.base import BaseDetail, BaseSearch
+from services.base import get_service, get_service_search
 
 router = APIRouter()
 
@@ -15,8 +17,8 @@ router = APIRouter()
             response_description='Представление объектов в сокращенном виде')
 async def film_search_and_sort(
         sort: str = 'imdb_rating',
-        page_number: int = Query(1, alias='page[number]'),
-        page_size: int = Query(50, alias='page[size]'),
+        page_number: int = Query(PaginatedParams().page_number, alias='page[number]'),
+        page_size: int = Query(PaginatedParams().page_size, alias='page[size]'),
         genre_filter: str = Query(None, alias='filter[genre]'),
         film_service: FilmService = Depends(
             get_film_service), ) -> FilmSearchShort:
@@ -49,9 +51,9 @@ async def film_search_and_sort(
             response_description='Представление результатов'
                                  'поиска в сокращенном виде')
 async def film_search(query: str,
-                      page_number: int = Query(1, alias='page[number]'),
-                      page_size: int = Query(50, alias='page[size]'),
-                      film_service: FilmService = Depends(get_film_service),
+                      page_number: int = Query(PaginatedParams().page_number, alias='page[number]'),
+                      page_size: int = Query(PaginatedParams().page_size, alias='page[size]'),
+                      film_service: BaseSearch = Depends(get_service_search),
                       ) -> FilmSearchShort:
     """
         Поиск по объектам в категории \"Фильмы\":
@@ -66,7 +68,10 @@ async def film_search(query: str,
     films_all = await film_service.get_search_result_from_elastic(
         query,
         page_number,
-        page_size
+        page_size,
+        ['title^5'],
+        'movies',
+        Film
     )
     films_all_results = [FilmSearchShort(
         uuid=row.id,
@@ -83,12 +88,12 @@ async def film_search(query: str,
 )
 async def film_details(
         film_id: str,
-        film_service: FilmService = Depends(
-            get_film_service)) -> FilmDetailView:
+        film_service: BaseDetail = Depends(
+            get_service)) -> FilmDetailView:
     """
         Полное описание объекта в категории \"Фильмы\":
     """
-    film = await film_service.get_by_id(film_id)
+    film = await film_service.get_by_id(film_id, 'movies', Film)
     if not film:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

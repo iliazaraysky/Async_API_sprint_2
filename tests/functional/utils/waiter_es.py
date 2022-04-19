@@ -1,20 +1,18 @@
 import os
-import sys
-import time
+
 import elasticsearch
+from backoff import backoff
+from dotenv import load_dotenv
 
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent)
+load_dotenv()
 
-from settings import Setting
-es = elasticsearch.Elasticsearch([f'{Setting.ELASTICSEARCH_URL}'], request_timeout=300)
 
-retries = 0
+@backoff()
+def check_es():
+    es = elasticsearch.Elasticsearch([f'{os.getenv("ELASTICSEARCH_URL")}'], request_timeout=300)
+    if not es.ping():
+        raise elasticsearch.ConnectionError
 
-while True:
-    if es.ping() or retries >= 5:
-        break
-    else:
-        time.sleep(5)
-        retries += 1
+
+if __name__ == "__main__":
+    check_es()

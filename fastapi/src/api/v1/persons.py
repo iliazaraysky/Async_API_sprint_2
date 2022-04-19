@@ -1,11 +1,13 @@
-from http import HTTPStatus
-
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
-
-from models.person import PersonSearch, PersonDetail
+from http import HTTPStatus
+from .params import PaginatedParams
 from models.film import FilmSearchShort
+from models.person import PersonSearch, PersonDetail, Person
+from fastapi import APIRouter, Depends, HTTPException, Query
 from services.person import PersonService, get_person_service
+
+from services.base import BaseDetail, BaseSearch
+from services.base import get_service, get_service_search
 
 router = APIRouter()
 
@@ -16,9 +18,9 @@ router = APIRouter()
                                  'поиска в сокращенном виде')
 async def person_search(
         query: str,
-        page_number: int = Query(1, alias='page[number]'),
-        page_size: int = Query(50, alias='page[size]'),
-        person_service: PersonService = Depends(get_person_service),) -> PersonSearch:
+        page_number: int = Query(PaginatedParams().page_number, alias='page[number]'),
+        page_size: int = Query(PaginatedParams().page_size, alias='page[size]'),
+        person_service: BaseSearch = Depends(get_service_search),) -> PersonSearch:
     """
         Поиск по объектам в категории \"Персоны\":
 
@@ -31,7 +33,10 @@ async def person_search(
     persons_all = await person_service.get_search_result_from_elastic(
         query,
         page_number,
-        page_size
+        page_size,
+        ['full_name'],
+        'persons',
+        Person
     )
     persons_all_results = [PersonSearch(
         uuid=row.id,
@@ -46,12 +51,12 @@ async def person_search(
             summary='Полное описание объекта')
 async def film_details(
         person_id: str,
-        person_service: PersonService = Depends(get_person_service)
+        person_service: BaseDetail = Depends(get_service)
 ) -> PersonDetail:
     """
         Полное описание объекта в категории \"Персоны\":
     """
-    person = await person_service.get_by_id(person_id)
+    person = await person_service.get_by_id(person_id, 'persons', Person)
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
                             detail='Person not found')

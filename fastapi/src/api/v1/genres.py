@@ -1,10 +1,12 @@
-from http import HTTPStatus
-
 from typing import List
+from http import HTTPStatus
+from .params import PaginatedParams
+from models.genre import GenresList, GenreDetail, Genre
+from services.genre import GenreService, get_genre_service
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from models.genre import GenresList, GenreDetail
-from services.genre import GenreService, get_genre_service
+from services.base import BaseDetail, BaseSearch
+from services.base import get_service, get_service_search
 
 router = APIRouter()
 
@@ -13,8 +15,8 @@ router = APIRouter()
             summary='Список жанров',
             response_description='Представление объектов в сокращенном виде')
 async def genre_main_page(
-        page_number: int = Query(1, alias='page[number]'),
-        page_size: int = Query(50, alias='page[size]'),
+        page_number: int = Query(PaginatedParams().page_number, alias='page[number]'),
+        page_size: int = Query(PaginatedParams().page_size, alias='page[size]'),
         genre_service: GenreService = Depends(get_genre_service)
 ) -> GenresList:
     """
@@ -38,9 +40,9 @@ async def genre_main_page(
             response_description='Представление результатов'
                                  'поиска в сокращенном виде')
 async def genre_search(query: str,
-                      page_number: int = Query(1, alias='page[number]'),
-                      page_size: int = Query(50, alias='page[size]'),
-                      genre_service: GenreService = Depends(get_genre_service),
+                      page_number: int = Query(PaginatedParams().page_number, alias='page[number]'),
+                      page_size: int = Query(PaginatedParams().page_size, alias='page[size]'),
+                      genre_service: BaseSearch = Depends(get_service_search),
                       ) -> GenresList:
     """
         Поиск по объектам в категории \"Жанры\":
@@ -55,7 +57,10 @@ async def genre_search(query: str,
     genre_search = await genre_service.get_search_result_from_elastic(
         query,
         page_number,
-        page_size
+        page_size,
+        ['name', 'id'],
+        'genres',
+        Genre
     )
     genre_search_results = [GenresList(
         uuid=row.id,
@@ -69,9 +74,9 @@ async def genre_search(query: str,
             response_description='Представление объектов в сокращенном виде')
 async def genre_details(
         genre_id: str,
-        genre_service: GenreService = Depends(get_genre_service)) -> GenreDetail:
+        genre_service: BaseDetail = Depends(get_service)) -> GenreDetail:
 
-    genre = await genre_service.get_by_id(genre_id)
+    genre = await genre_service.get_by_id(genre_id, 'genres', Genre)
     if not genre:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

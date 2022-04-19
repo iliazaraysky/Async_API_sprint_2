@@ -1,8 +1,10 @@
 import json
 import pytest
-import asyncio
 from http import HTTPStatus
 from ..settings import Setting
+from ..testdata.assert_data import persons_validation
+
+Setting = Setting()
 
 
 @pytest.mark.asyncio
@@ -62,14 +64,14 @@ async def test_person_index_response(create_movie_index,
     assert HTTPStatus.OK == response.status
 
     # Наполнение данными в индексе persons. Elasticsearch
-    assert response_count.body.get('count') == 22
+    assert response_count.body.get('count') == persons_validation['count_elastic_index']
 
     # Доступность отдельного объекта. Elasticsearch
     assert response_detail_get.body['_source']['id'] == '6f9f6eba-9322-4f21-b3f1-293efd2a9c06'
 
     # Поиск по персонам. Параметр поиска 'Roy'
     # Сравниваем данные из Redis и Elasticsearch
-    redis_data = await redis_pool.get('search_person_roy15', encoding='utf-8')
+    redis_data = await redis_pool.get('search_roy15', encoding='utf-8')
     redis_dict = json.loads(redis_data)
     assert redis_dict[0]['id'] == search_uuid
     assert redis_dict[0]['full_name'] == search_full_name

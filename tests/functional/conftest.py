@@ -9,14 +9,16 @@ from dataclasses import dataclass
 from multidict import CIMultiDictProxy
 from elasticsearch import AsyncElasticsearch
 
-from tests.functional.utils.genres import load_index
-from tests.functional.utils.scheme import (MOVIE_SCHEME,
-                                           GENRE_SCHEME,
-                                           PERSON_SCHEME)
+from .utils.genres import load_index
+from .utils.scheme import (MOVIE_SCHEME,
+                           GENRE_SCHEME,
+                           PERSON_SCHEME)
 
-from tests.functional.testdata.movies import MOVIES_DATA
-from tests.functional.testdata.genres import GENRES_DATA
-from tests.functional.testdata.persons import PERSONS_DATA
+from .testdata.movies import MOVIES_DATA
+from .testdata.genres import GENRES_DATA
+from .testdata.persons import PERSONS_DATA
+
+Setting = Setting()
 
 
 @dataclass

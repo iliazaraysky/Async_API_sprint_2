@@ -2,6 +2,9 @@ import json
 import pytest
 from http import HTTPStatus
 from ..settings import Setting
+from ..testdata.assert_data import films_validation
+
+Setting = Setting()
 
 
 @pytest.mark.asyncio
@@ -75,13 +78,13 @@ async def test_film_elastic_response(create_movie_index,
     assert HTTPStatus.OK == response_index.status
 
     # Наполнение данными в индексе movies. Elasticsearch
-    assert response_count.body.get('count') == 5
+    assert response_count.body.get('count') == films_validation['count_elastic_index']
 
     # Доступность отдельного объекта. Elasticsearch
     assert response_detail_get.body['_source']['title'] == 'Star Slammer'
 
     # Главная страница. Стандартная сортировка
-    assert len(response_fastapi_sort.body) == 5
+    assert len(response_fastapi_sort.body) == films_validation['count_elastic_index']
 
     # Жанр и популярные фильмы в нём
     # Сравниваем данные из Redis и Elasticsearch
@@ -90,7 +93,7 @@ async def test_film_elastic_response(create_movie_index,
     assert len(redis_dict) == len(response_fastapi_film_filter.body)
 
     # Пагинация. Категория films. Один объект на странице, пятая страница
-    assert len(response_fastapi_pagination.body) == 1
+    assert len(response_fastapi_pagination.body) == films_validation['count_object_pagination']
 
     # Поиск по фильмам. Параметр поиска 'Slammer'
     # Сравниваем данные из Redis и Elasticsearch

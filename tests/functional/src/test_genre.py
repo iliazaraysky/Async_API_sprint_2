@@ -2,6 +2,9 @@ import json
 import pytest
 from http import HTTPStatus
 from ..settings import Setting
+from ..testdata.assert_data import genres_validation
+
+Setting = Setting()
 
 
 @pytest.mark.asyncio
@@ -62,16 +65,16 @@ async def test_genre_index_response(
     assert HTTPStatus.OK == response.status
 
     # Наполнение данными в индексе genres. Elasticsearch
-    assert response_count.body.get('count') == 26
+    assert response_count.body.get('count') == genres_validation['count_elastic_index']
 
     # Доступность отдельного объекта. Elasticsearch
     assert response_detail_get.body['_source']['name'] == 'Action'
 
     # Список жанров
-    assert (len(response_fastapi_genre_list.body)) == 26
+    assert (len(response_fastapi_genre_list.body)) == genres_validation['count_elastic_index']
 
     # Пагинация. Страница: 2. Объектов: 5
-    assert (len(response_fastapi_genre_pagination.body)) == 5
+    assert (len(response_fastapi_genre_pagination.body)) == genres_validation['count_object_pagination']
 
     # Данные жанра
     # Сравниваем данные из Redis и Elasticsearch
@@ -82,7 +85,7 @@ async def test_genre_index_response(
 
     # Поиск по жанрам. Параметр поиска 'animation'
     # Сравниваем данные из Redis и Elasticsearch
-    redis_data = await redis_pool.get('search_genreanimation11', encoding='utf-8')
+    redis_data = await redis_pool.get('search_animation11', encoding='utf-8')
     redis_dict = json.loads(redis_data[1:-1])
     assert redis_dict['id'] == search_uuid
     assert redis_dict['name'] == search_title
