@@ -20,3 +20,5 @@ Async_API_sprint_2/tests/.env
 cd Async_API_sprint_2/tests/functional
 docker-compose -f docker-compose.yml up --build
 ```
+## Адрес репозитория
+https://github.com/iliazaraysky/Async_API_sprint_2/
